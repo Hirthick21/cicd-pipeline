@@ -1,4 +1,3 @@
-cat > Jenkinsfile << 'EOF'
 pipeline {
     agent any
     environment {
@@ -26,19 +25,19 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh 'npm install'
+                bat 'npm install'
             }
         }
         stage('Test') {
             steps {
-                sh 'echo "Tests passed"'
+                bat 'echo Tests passed'
             }
         }
         stage('Copy Logo') {
             steps {
                 script {
                     if (env.BRANCH_NAME == 'dev') {
-                        sh 'cp public/logo-dev.svg public/logo.svg'
+                        bat 'copy public\\logo-dev.svg public\\logo.svg'
                     }
                 }
             }
@@ -46,7 +45,7 @@ pipeline {
         stage('Build Docker') {
             steps {
                 script {
-                    sh """
+                    bat """
                         docker build -t ${env.IMAGE_NAME}:v1.0 .
                         docker tag ${env.IMAGE_NAME}:v1.0 ${DOCKER_REGISTRY}/${env.IMAGE_NAME}:v1.0
                     """
@@ -57,7 +56,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry('', 'docker-hub-credentials') {
-                        sh "docker push ${DOCKER_REGISTRY}/${env.IMAGE_NAME}:v1.0"
+                        bat "docker push ${DOCKER_REGISTRY}/${env.IMAGE_NAME}:v1.0"
                     }
                 }
             }
@@ -65,9 +64,9 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    sh """
-                        docker stop ${env.CONTAINER_NAME} 2>/dev/null || true
-                        docker rm ${env.CONTAINER_NAME} 2>/dev/null || true
+                    bat """
+                        docker stop ${env.CONTAINER_NAME} 2>nul || exit 0
+                        docker rm ${env.CONTAINER_NAME} 2>nul || exit 0
                         docker run -d --name ${env.CONTAINER_NAME} -p ${env.APP_PORT}:3000 ${env.IMAGE_NAME}:v1.0
                     """
                     echo "App running on http://localhost:${env.APP_PORT}"
@@ -76,4 +75,3 @@ pipeline {
         }
     }
 }
-EOF

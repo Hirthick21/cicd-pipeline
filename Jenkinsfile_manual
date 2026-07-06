@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['main', 'dev'])
+    }
+    environment {
+        DOCKER_REGISTRY = 'hirthick21'
+    }
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    def env = params.DEPLOY_ENV
+                    def image = env == 'main' ? 'nodemain' : 'nodedev'
+                    def container = env == 'main' ? 'app-main' : 'app-dev'
+                    def port = env == 'main' ? '3000' : '3001'
+                    
+
+
+>
+>
+                    
+                    docker.withRegistry('', 'docker-hub-credentials') {
+                        sh """
+                            docker pull ${DOCKER_REGISTRY}/${image}:v1.0
+                            docker stop ${container} 2>/dev/null || true
+                            docker rm ${container} 2>/dev/null || true
+                            docker run -d --name ${container} -p ${port}:3000 ${DOCKER_REGISTRY}/${image}:v1.0
+                        """
+                    }
+                    echo "Deployed to http://localhost:${port}"
+                }
+            }
+        }
+    }
+}
